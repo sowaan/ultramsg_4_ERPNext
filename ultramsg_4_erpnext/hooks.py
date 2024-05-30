@@ -117,7 +117,18 @@ app_license = "MIT"
 from frappe import _
 from . import __version__ as app_version
 
-fixtures=[{ "dt":"Property Setter" ,"filters":[[
+fixtures=[{
+		"doctype":"Custom Field",
+		"filters":[
+			[
+				"fieldname",
+                "in",
+				(
+					"custom_mobile_phone"
+				)
+			]
+		]
+	},{ "dt":"Property Setter" ,"filters":[[
                 "name", "in",[
                     "Notification-channel-options",] ]] 
            }]
