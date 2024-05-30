@@ -12,8 +12,7 @@ from frappe import enqueue
 # to send whatsapp message and document using ultramsg
 class ERPGulfNotification(Notification):
  #to create pdf
-  def create_pdf(self,doc):
-    file = frappe.get_print(doc.doctype, doc.name, self.print_format, as_pdf=True)
+  def create_pdf(self,doc, file):    
     pdf_bytes = io.BytesIO(file)
     pdf_base64 = base64.b64encode(pdf_bytes.getvalue()).decode()
     in_memory_url = f"data:application/pdf;base64,{pdf_base64}"
@@ -22,8 +21,8 @@ class ERPGulfNotification(Notification):
      
  # fetch pdf from the create_pdf function and send to whatsapp 
   @frappe.whitelist()
-  def send_whatsapp_with_pdf(self,doc,context):
-    memory_url=self.create_pdf(doc)
+  def send_whatsapp_with_pdf(self,doc,context, file):
+    memory_url=self.create_pdf(doc, file)
     token = frappe.get_doc('whatsapp message').get('token') 
     msg1 = frappe.render_template(self.message, context)
     recipients = self.get_receiver_list(doc,context)
@@ -109,17 +108,19 @@ class ERPGulfNotification(Notification):
     if doc.get("_comments"):
         context["comments"] = json.loads(doc.get("_comments"))
     if self.is_standard:
-        self.load_standard_properties(context)      
+        self.load_standard_properties(context) 
     try:
       if self.channel == "whatsapp message":
         # if attach_print and print format both are working then it send pdf with message
         if self.attach_print and self.print_format:
+          file = frappe.get_print(doc.doctype, doc.name, self.print_format, as_pdf=True)
           frappe.enqueue(
             self.send_whatsapp_with_pdf,
-            queue="short",
-            timeout=200,
+            queue="long",
+            timeout=4000,
             doc=doc,
-            context=context
+            context=context,
+            file=file
             ) 
                  
                # otherwise send only message   
